@@ -149,9 +149,18 @@ function writeStaticRscRedirects(pagesDir: string, targetDir: string): void {
 
     const routePath = posix.replace(/\.rsc$/, '');
     const flightPath = `/rsc/${posix}`;
-    lines.push(`${flightPath} ${flightPath} 200`);
 
+    // Identity rewrite: keep the `.rsc` extension in the URL so Cloudflare
+    // Pages serves the Flight payload instead of letting it fall through to
+    // the `^/(.+)$` -> `.html` catch-all rule (which returns HTML and breaks
+    // client RSC navigation / hydration).
+    if (posix !== 'index.rsc') {
+      lines.push(`${flightPath} ${flightPath} 200`);
+    }
+
+    // Extensionless alias for `/rsc/foo` (the request path the client emits).
     if (routePath === 'index') return;
+
     lines.push(`/rsc/${routePath} ${flightPath} 200`);
   });
 
